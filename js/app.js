@@ -988,8 +988,11 @@ function mostrarSeccion(seccion) {
         case 'calificaciones':
             cargarCalificaciones();
             break;
-        case 'catalogos':
-            cargarCatalogos();
+        case 'horarios':
+            cargarGradosParaHorario();
+            break;
+        case 'grados-secciones':
+            cargarGradosSecciones();
             break;
         case 'dashboard':
             cargarDashboard();
@@ -997,279 +1000,333 @@ function mostrarSeccion(seccion) {
     }
 }
 
-// ============ CATÁLOGOS ============
-async function cargarCatalogos() {
-    await Promise.all([
-        cargarListaGrados(),
-        cargarListaEspecialidades(),
-        cargarListaHorarios(),
-        cargarListaSecciones()
-    ]);
-}
+// ============ HORARIOS DE CLASE ============
 
-async function cargarListaGrados() {
+// Variable global para almacenar el Id_seccion seleccionada
+var seccionSeleccionada = null;
+
+// Cargar grados para el selector de horarios
+async function cargarGradosParaHorario() {
     try {
         var response = await fetch(API_URL + '/grados');
         var grados = await response.json();
-        var lista = document.getElementById('listaGrados');
-        if (!lista) return;
+        var select = document.getElementById('selectGradoHorario');
+        if (!select) return;
+
+        select.innerHTML = '<option value="">-- Seleccione Grado --</option>';
+        grados.forEach(function(g) {
+            select.innerHTML += '<option value="' + g.Id_grado + '">' + g.Nombre_grado + ' (' + g.Turno + ')</option>';
+        });
+        
+        // Limpiar secciones y grilla
+        document.getElementById('selectSeccionHorario').innerHTML = '<option value="">-- Primero seleccione grado --</option>';
+        document.getElementById('cuerpoGrillaHorario').innerHTML = '';
+    } catch (error) {
+        console.error('Error al cargar grados:', error);
+    }
+}
+
+// Cargar secciones según el grado seleccionado
+async function cargarSeccionesParaHorario() {
+    var idGrado = document.getElementById('selectGradoHorario').value;
+    var selectSeccion = document.getElementById('selectSeccionHorario');
+    
+    if (!idGrado) {
+        selectSeccion.innerHTML = '<option value="">-- Primero seleccione grado --</option>';
+        document.getElementById('cuerpoGrillaHorario').innerHTML = '';
+        return;
+    }
+
+    try {
+        var response = await fetch(API_URL + '/secciones/grado/' + idGrado);
+        var secciones = await response.json();
+        
+        selectSeccion.innerHTML = '<option value="">-- Seleccione Sección --</option>';
+        secciones.forEach(function(s) {
+            selectSeccion.innerHTML += '<option value="' + s.Id_seccion + '">Sección ' + s.Letra + '</option>';
+        });
+        
+        // Limpiar grilla
+        document.getElementById('cuerpoGrillaHorario').innerHTML = '';
+    } catch (error) {
+        console.error('Error al cargar secciones:', error);
+    }
+}
+
+// Cargar grilla de horario para la sección seleccionada
+async function cargarGrillaHorario() {
+    var idSeccion = document.getElementById('selectSeccionHorario').value;
+    
+    if (!idSeccion) {
+        showAlert('Seleccione una sección', 'warning');
+        return;
+    }
+
+    seccionSeleccionada = idSeccion;
+
+    try {
+        showLoading();
+        var response = await fetch(API_URL + '/horario-clase/' + idSeccion);
+        var horarios = await response.json();
+        
+        renderizarGrillaHorario(horarios);
+    } catch (error) {
+        console.error('Error al cargar grilla:', error);
+        showAlert('Error al cargar horario', 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Inicializar grilla con bloques vacíos
+async function inicializarGrillaHorario() {
+    var idSeccion = document.getElementById('selectSeccionHorario').value;
+    
+    if (!idSeccion) {
+        showAlert('Seleccione una sección primero', 'warning');
+        return;
+    }
+
+    if (!confirm('¿Crear bloques de horario vacíos para esta sección?')) return;
+
+    try {
+        showLoading();
+        var response = await fetch(API_URL + '/horario-clase/inicializar/' + idSeccion, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            showAlert('Grilla inicializada correctamente', 'success');
+            cargarGrillaHorario();
+        } else {
+            var data = await response.json();
+            showAlert(data.error || 'Error al inicializar', 'danger');
+        }
+    } catch (error) {
+        showAlert('Error de conexión', 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Renderizar la grilla de horarios
+function renderizarGrillaHorario(horarios) {
+    var tbody = document.getElementById('cuerpoGrillaHorario');
+    tbody.innerHTML = '';
+
+    if (horarios.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><i class="bi bi-calendar-x fs-1"></i><br>No hay horario. Use "Inicializar Grilla" para crear los bloques.</td></tr>';
+        return;
+    }
+
+    // Agrupar por hora
+    var horasPorBloque = {};
+    horarios.forEach(function(h) {
+        var key = h.Hora_inicio + '-' + h.Hora_fin;
+        if (!horasPorBloque[key]) {
+            horasPorBloque[key] = { Hora_inicio: h.Hora_inicio, Hora_fin: h.Hora_fin, dias: {} };
+        }
+        horasPorBloque[key].dias[h.Dia] = h;
+    });
+
+    var dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+
+    // Crear filas
+    Object.keys(horasPorBloque).sort().forEach(function(key) {
+        var bloque = horasPorBloque[key];
+        var tr = document.createElement('tr');
+        
+        // Columna de hora
+        var tdHora = document.createElement('td');
+        tdHora.className = 'fw-bold text-center';
+        tdHora.innerHTML = bloque.Hora_inicio.substring(0,5) + '<br><small class="text-muted">' + bloque.Hora_fin.substring(0,5) + '</small>';
+        tr.appendChild(tdHora);
+
+        // Columnas de días
+        dias.forEach(function(dia) {
+            var td = document.createElement('td');
+            td.className = 'text-center celda-horario';
+            
+            var h = bloque.dias[dia];
+            if (h) {
+                if (h.Nombre_especialidad && h.Codigo_profesor) {
+                    td.innerHTML = '<div class="badge bg-primary mb-1">' + h.Nombre_especialidad + '</div><br>' +
+                                   '<small class="text-muted">' + (h.Nombre_profesor || 'Prof. ' + h.Codigo_profesor) + '</small>';
+                    td.className += ' bg-light';
+                } else {
+                    td.innerHTML = '<span class="text-muted">Sin asignar</span>';
+                }
+                td.style.cursor = 'pointer';
+                td.onclick = function() { abrirModalAsignacion(h.Id_horario_clase); };
+            }
+            tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+    });
+}
+
+// Abrir modal para asignar materia y profesor
+async function abrirModalAsignacion(idHorarioClase) {
+    try {
+        // Guardar el ID en el formulario
+        document.getElementById('idHorarioClase').value = idHorarioClase;
+
+        // Cargar especialidades
+        var respEsp = await fetch(API_URL + '/especialidades');
+        var especialidades = await respEsp.json();
+        var selectEsp = document.getElementById('selectEspecialidadAsignar');
+        selectEsp.innerHTML = '<option value="">-- Seleccione Materia --</option>';
+        especialidades.forEach(function(e) {
+            selectEsp.innerHTML += '<option value="' + e.Id_especialidad + '">' + e.Nombre_especialidad + '</option>';
+        });
+
+        // Cargar profesores
+        var respProf = await fetch(API_URL + '/profesores');
+        var profesores = await respProf.json();
+        var selectProf = document.getElementById('selectProfesorAsignar');
+        selectProf.innerHTML = '<option value="">-- Seleccione Profesor --</option>';
+        profesores.forEach(function(p) {
+            selectProf.innerHTML += '<option value="' + p.Codigo_profesor + '">' + p.Nombre + ' ' + p.Apellidos + '</option>';
+        });
+
+        // Mostrar modal
+        var modal = new bootstrap.Modal(document.getElementById('modalAsignarClase'));
+        modal.show();
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('Error al cargar datos', 'danger');
+    }
+}
+
+// Guardar asignación de horario
+async function guardarAsignacionHorario(event) {
+    event.preventDefault();
+    
+    var idHorarioClase = document.getElementById('idHorarioClase').value;
+    var idEspecialidad = document.getElementById('selectEspecialidadAsignar').value;
+    var codigoProfesor = document.getElementById('selectProfesorAsignar').value;
+
+    try {
+        showLoading();
+        var response = await fetch(API_URL + '/horario-clase/asignar/' + idHorarioClase, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                Id_especialidad: idEspecialidad || null,
+                Codigo_profesor: codigoProfesor || null
+            })
+        });
+
+        if (response.ok) {
+            showAlert('Asignación guardada', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('modalAsignarClase')).hide();
+            cargarGrillaHorario();
+        } else {
+            showAlert('Error al guardar', 'danger');
+        }
+    } catch (error) {
+        showAlert('Error de conexión', 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Limpiar asignación (quitar materia y profesor)
+async function limpiarAsignacionHorario() {
+    var idHorarioClase = document.getElementById('idHorarioClase').value;
+    
+    if (!confirm('¿Quitar la asignación de este bloque?')) return;
+
+    try {
+        showLoading();
+        var response = await fetch(API_URL + '/horario-clase/asignar/' + idHorarioClase, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                Id_especialidad: null,
+                Codigo_profesor: null
+            })
+        });
+
+        if (response.ok) {
+            showAlert('Asignación eliminada', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('modalAsignarClase')).hide();
+            cargarGrillaHorario();
+        } else {
+            showAlert('Error al limpiar', 'danger');
+        }
+    } catch (error) {
+        showAlert('Error de conexión', 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+// ============ GRADOS Y SECCIONES ============
+async function cargarGradosSecciones() {
+    try {
+        var response = await fetch(API_URL + '/grados');
+        var grados = await response.json();
+        var container = document.getElementById('listaGradosSecciones');
+        if (!container) return;
 
         if (grados.length === 0) {
-            lista.innerHTML = '<li class="list-group-item text-center text-muted"><i class="bi bi-inbox"></i> Sin grados</li>';
+            container.innerHTML = '<div class="alert alert-info"><i class="bi bi-info-circle me-2"></i>No hay grados registrados. Use "Inicializar Grados y Secciones" para crear la estructura.</div>';
             return;
         }
 
-        var html = '';
-        grados.forEach(function(g) {
+        var html = '<div class="row">';
+        
+        // Separar por nivel
+        var inicial = grados.filter(function(g) { return g.Nivel === 'Inicial'; });
+        var primaria = grados.filter(function(g) { return g.Nivel === 'Primaria'; });
+
+        // Inicial
+        html += '<div class="col-md-6">';
+        html += '<h5 class="text-primary"><i class="bi bi-sun me-2"></i>Nivel Inicial (Turno Mañana)</h5>';
+        html += '<ul class="list-group mb-3">';
+        inicial.forEach(function(g) {
             html += '<li class="list-group-item d-flex justify-content-between align-items-center">';
-            html += '<span>' + g.Nombre_grado + '</span>';
-            html += '<button class="btn btn-sm btn-outline-danger" onclick="eliminarGrado(' + g.Id_grado + ')"><i class="bi bi-trash"></i></button>';
+            html += '<span><i class="bi bi-mortarboard me-2"></i>' + g.Nombre_grado + '</span>';
+            html += '<span class="badge bg-primary rounded-pill">Secciones A, B</span>';
             html += '</li>';
         });
-        lista.innerHTML = html;
+        if (inicial.length === 0) html += '<li class="list-group-item text-muted">Sin grados de inicial</li>';
+        html += '</ul></div>';
+
+        // Primaria
+        html += '<div class="col-md-6">';
+        html += '<h5 class="text-success"><i class="bi bi-moon me-2"></i>Nivel Primaria (Turno Tarde)</h5>';
+        html += '<ul class="list-group mb-3">';
+        primaria.forEach(function(g) {
+            html += '<li class="list-group-item d-flex justify-content-between align-items-center">';
+            html += '<span><i class="bi bi-mortarboard me-2"></i>' + g.Nombre_grado + '</span>';
+            html += '<span class="badge bg-success rounded-pill">Secciones A, B</span>';
+            html += '</li>';
+        });
+        if (primaria.length === 0) html += '<li class="list-group-item text-muted">Sin grados de primaria</li>';
+        html += '</ul></div>';
+
+        html += '</div>';
+        container.innerHTML = html;
     } catch (error) {
         console.error('Error:', error);
     }
 }
 
-async function cargarListaEspecialidades() {
-    try {
-        var response = await fetch(API_URL + '/especialidades');
-        var especialidades = await response.json();
-        var lista = document.getElementById('listaEspecialidades');
-        if (!lista) return;
-
-        if (especialidades.length === 0) {
-            lista.innerHTML = '<li class="list-group-item text-center text-muted"><i class="bi bi-inbox"></i> Sin especialidades</li>';
-            return;
-        }
-
-        var html = '';
-        especialidades.forEach(function(e) {
-            html += '<li class="list-group-item d-flex justify-content-between align-items-center">';
-            html += '<span>' + e.Nombre_especialidad + '</span>';
-            html += '<button class="btn btn-sm btn-outline-danger" onclick="eliminarEspecialidad(' + e.Id_especialidad + ')"><i class="bi bi-trash"></i></button>';
-            html += '</li>';
-        });
-        lista.innerHTML = html;
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-
-async function cargarListaHorarios() {
-    try {
-        var response = await fetch(API_URL + '/horarios');
-        var horarios = await response.json();
-        var lista = document.getElementById('listaHorarios');
-        if (!lista) return;
-
-        if (horarios.length === 0) {
-            lista.innerHTML = '<li class="list-group-item text-center text-muted"><i class="bi bi-inbox"></i> Sin horarios</li>';
-            return;
-        }
-
-        var html = '';
-        horarios.forEach(function(h) {
-            html += '<li class="list-group-item d-flex justify-content-between align-items-center">';
-            html += '<span><i class="bi bi-clock me-2"></i>' + h.Hora_inicio + ' - ' + h.Hora_fin + '</span>';
-            html += '<button class="btn btn-sm btn-outline-danger" onclick="eliminarHorario(' + h.Id_horario + ')"><i class="bi bi-trash"></i></button>';
-            html += '</li>';
-        });
-        lista.innerHTML = html;
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-
-async function cargarListaSecciones() {
-    try {
-        var response = await fetch(API_URL + '/secciones');
-        var secciones = await response.json();
-        var lista = document.getElementById('listaSecciones');
-        if (!lista) return;
-
-        if (secciones.length === 0) {
-            lista.innerHTML = '<li class="list-group-item text-center text-muted"><i class="bi bi-inbox"></i> Sin secciones</li>';
-            return;
-        }
-
-        var html = '';
-        secciones.forEach(function(s) {
-            html += '<li class="list-group-item d-flex justify-content-between align-items-center">';
-            html += '<span><i class="bi bi-sun me-2"></i>' + s.Turno + ' (' + s.Cantidad_alumnos + ' alumnos)</span>';
-            html += '<button class="btn btn-sm btn-outline-danger" onclick="eliminarSeccion(' + s.Id_seccion + ')"><i class="bi bi-trash"></i></button>';
-            html += '</li>';
-        });
-        lista.innerHTML = html;
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-
-// Guardar Grado
-async function guardarGrado(event) {
-    event.preventDefault();
-    try {
-        showLoading();
-        var response = await fetch(API_URL + '/grados', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ Nombre_grado: document.getElementById('nombreGrado').value })
-        });
-        if (response.ok) {
-            showAlert('Grado creado', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('modalGrado')).hide();
-            document.getElementById('formGrado').reset();
-            cargarListaGrados();
-        } else {
-            showAlert('Error al crear grado', 'danger');
-        }
-    } catch (error) {
-        showAlert('Error de conexión', 'danger');
-    } finally {
-        hideLoading();
-    }
-}
-
-// Guardar Especialidad
-async function guardarEspecialidad(event) {
-    event.preventDefault();
-    try {
-        showLoading();
-        var response = await fetch(API_URL + '/especialidades', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ Nombre_especialidad: document.getElementById('nombreEspecialidad').value })
-        });
-        if (response.ok) {
-            showAlert('Especialidad creada', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('modalEspecialidad')).hide();
-            document.getElementById('formEspecialidad').reset();
-            cargarListaEspecialidades();
-        } else {
-            showAlert('Error al crear especialidad', 'danger');
-        }
-    } catch (error) {
-        showAlert('Error de conexión', 'danger');
-    } finally {
-        hideLoading();
-    }
-}
-
-// Guardar Horario
-async function guardarHorario(event) {
-    event.preventDefault();
-    try {
-        showLoading();
-        var response = await fetch(API_URL + '/horarios', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                Hora_inicio: document.getElementById('horaInicio').value,
-                Hora_fin: document.getElementById('horaFin').value
-            })
-        });
-        if (response.ok) {
-            showAlert('Horario creado', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('modalHorario')).hide();
-            document.getElementById('formHorario').reset();
-            cargarListaHorarios();
-        } else {
-            showAlert('Error al crear horario', 'danger');
-        }
-    } catch (error) {
-        showAlert('Error de conexión', 'danger');
-    } finally {
-        hideLoading();
-    }
-}
-
-// Guardar Sección
-async function guardarSeccion(event) {
-    event.preventDefault();
-    try {
-        showLoading();
-        var response = await fetch(API_URL + '/secciones', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                Turno: document.getElementById('turnoSeccion').value,
-                Cantidad_alumnos: parseInt(document.getElementById('cantidadAlumnos').value) || 30
-            })
-        });
-        if (response.ok) {
-            showAlert('Sección creada', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('modalSeccion')).hide();
-            document.getElementById('formSeccion').reset();
-            cargarListaSecciones();
-        } else {
-            showAlert('Error al crear sección', 'danger');
-        }
-    } catch (error) {
-        showAlert('Error de conexión', 'danger');
-    } finally {
-        hideLoading();
-    }
-}
-
-// Eliminar funciones
-async function eliminarGrado(id) {
-    if (!confirm('¿Eliminar este grado?')) return;
-    try {
-        await fetch(API_URL + '/grados/' + id, { method: 'DELETE' });
-        showAlert('Grado eliminado', 'success');
-        cargarListaGrados();
-    } catch (error) {
-        showAlert('Error al eliminar', 'danger');
-    }
-}
-
-async function eliminarEspecialidad(id) {
-    if (!confirm('¿Eliminar esta especialidad?')) return;
-    try {
-        await fetch(API_URL + '/especialidades/' + id, { method: 'DELETE' });
-        showAlert('Especialidad eliminada', 'success');
-        cargarListaEspecialidades();
-    } catch (error) {
-        showAlert('Error al eliminar', 'danger');
-    }
-}
-
-async function eliminarHorario(id) {
-    if (!confirm('¿Eliminar este horario?')) return;
-    try {
-        await fetch(API_URL + '/horarios/' + id, { method: 'DELETE' });
-        showAlert('Horario eliminado', 'success');
-        cargarListaHorarios();
-    } catch (error) {
-        showAlert('Error al eliminar', 'danger');
-    }
-}
-
-async function eliminarSeccion(id) {
-    if (!confirm('¿Eliminar esta sección?')) return;
-    try {
-        await fetch(API_URL + '/secciones/' + id, { method: 'DELETE' });
-        showAlert('Sección eliminada', 'success');
-        cargarListaSecciones();
-    } catch (error) {
-        showAlert('Error al eliminar', 'danger');
-    }
-}
-
-// Inicializar Catálogos
-async function inicializarCatalogos() {
-    if (!confirm('¿Desea inicializar los catálogos con datos predeterminados?\n\nEsto creará:\n- 9 Grados (Inicial y Primaria)\n- 9 Especialidades\n- 7 Horarios\n- 4 Secciones')) return;
+// Inicializar Grados y Secciones
+async function inicializarGradosSecciones() {
+    if (!confirm('¿Desea inicializar los grados y secciones con datos predeterminados?\n\nEsto creará:\n- 3 Grados de Inicial (3, 4, 5 años) - Turno Mañana\n- 6 Grados de Primaria (1° a 6°) - Turno Tarde\n- 2 Secciones (A, B) por cada grado\n- Especialidades básicas')) return;
     
     try {
         showLoading();
         var response = await fetch(API_URL + '/inicializar-catalogos', { method: 'POST' });
         var data = await response.json();
         showAlert(data.message, 'success');
-        cargarCatalogos();
+        cargarGradosSecciones();
     } catch (error) {
-        showAlert('Error al inicializar catálogos', 'danger');
+        showAlert('Error al inicializar', 'danger');
     } finally {
         hideLoading();
     }

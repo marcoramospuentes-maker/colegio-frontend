@@ -45,6 +45,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="#" class="nav-link" data-seccion="horarios">
+                            <i class="bi bi-calendar3"></i> Horarios
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="#" class="nav-link" data-seccion="matriculas">
                             <i class="bi bi-clipboard-check"></i> Matriculas
                         </a>
@@ -60,8 +65,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link" data-seccion="catalogos">
-                            <i class="bi bi-gear"></i> Catálogos
+                        <a href="#" class="nav-link" data-seccion="grados-secciones">
+                            <i class="bi bi-list-ul"></i> Grados y Secciones
                         </a>
                     </li>
                 </ul>
@@ -385,85 +390,137 @@
                     </div>
                 </div>
 
-                <!-- CATÁLOGOS -->
-                <div id="seccion-catalogos" class="content-section d-none">
+                <!-- HORARIOS DE CLASE -->
+                <div id="seccion-horarios" class="content-section d-none">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4><i class="bi bi-gear me-2"></i>Gestión de Catálogos <span class="badge bg-danger">Solo Director</span></h4>
+                        <h4><i class="bi bi-calendar3 me-2"></i>Gestión de Horarios <span class="badge bg-danger">Solo Director</span></h4>
+                    </div>
+                    
+                    <!-- Selector de Grado y Sección -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-4">
+                                    <label class="form-label"><i class="bi bi-mortarboard me-2"></i>Seleccione Grado</label>
+                                    <select class="form-select" id="selectGradoHorario" onchange="cargarSeccionesParaHorario()">
+                                        <option value="">-- Seleccione un grado --</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label"><i class="bi bi-collection me-2"></i>Seleccione Sección</label>
+                                    <select class="form-select" id="selectSeccionHorario" onchange="cargarGrillaHorario()" disabled>
+                                        <option value="">-- Primero seleccione grado --</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-primary w-100" onclick="inicializarGrillaHorario()" id="btnInicializarHorario" disabled>
+                                        <i class="bi bi-grid-3x3 me-1"></i> Crear Grilla de Horario
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Info de la sección seleccionada -->
+                    <div id="infoSeccionHorario" class="alert alert-info d-none">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <span id="textoInfoSeccion"></span>
+                    </div>
+
+                    <!-- Grilla de Horario -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-dark text-white">
+                            <h5 class="mb-0"><i class="bi bi-table me-2"></i>Horario Semanal</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-bordered mb-0" id="tablaHorarioClase">
+                                    <thead class="table-dark text-center">
+                                        <tr>
+                                            <th style="width: 120px;">Hora</th>
+                                            <th>Lunes</th>
+                                            <th>Martes</th>
+                                            <th>Miércoles</th>
+                                            <th>Jueves</th>
+                                            <th>Viernes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="bodyHorarioClase">
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted py-5">
+                                                <i class="bi bi-calendar-x fs-1 d-block mb-2"></i>
+                                                Seleccione un grado y sección para ver/crear el horario
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GRADOS Y SECCIONES -->
+                <div id="seccion-grados-secciones" class="content-section d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4><i class="bi bi-list-ul me-2"></i>Grados y Secciones</h4>
                         <button class="btn btn-success" onclick="inicializarCatalogos()">
-                            <i class="bi bi-magic me-1"></i> Inicializar Catálogos
+                            <i class="bi bi-magic me-1"></i> Inicializar Datos
                         </button>
                     </div>
                     
-                    <div class="row g-4">
-                        <!-- GRADOS -->
-                        <div class="col-md-6">
-                            <div class="card shadow-sm h-100">
-                                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0"><i class="bi bi-mortarboard me-2"></i>Grados</h6>
-                                    <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#modalGrado">
-                                        <i class="bi bi-plus"></i>
-                                    </button>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>Estructura Académica</h6>
                                 </div>
-                                <div class="card-body" style="max-height: 300px; overflow-y: auto;">
-                                    <ul class="list-group list-group-flush" id="listaGrados">
-                                        <li class="list-group-item text-center text-muted">Cargando...</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- ESPECIALIDADES -->
-                        <div class="col-md-6">
-                            <div class="card shadow-sm h-100">
-                                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0"><i class="bi bi-bookmark-star me-2"></i>Especialidades</h6>
-                                    <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#modalEspecialidad">
-                                        <i class="bi bi-plus"></i>
-                                    </button>
-                                </div>
-                                <div class="card-body" style="max-height: 300px; overflow-y: auto;">
-                                    <ul class="list-group list-group-flush" id="listaEspecialidades">
-                                        <li class="list-group-item text-center text-muted">Cargando...</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- HORARIOS -->
-                        <div class="col-md-6">
-                            <div class="card shadow-sm h-100">
-                                <div class="card-header bg-warning d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0"><i class="bi bi-clock me-2"></i>Horarios (Carga Horaria)</h6>
-                                    <button class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#modalHorario">
-                                        <i class="bi bi-plus"></i>
-                                    </button>
-                                </div>
-                                <div class="card-body" style="max-height: 300px; overflow-y: auto;">
-                                    <ul class="list-group list-group-flush" id="listaHorarios">
-                                        <li class="list-group-item text-center text-muted">Cargando...</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- SECCIONES -->
-                        <div class="col-md-6">
-                            <div class="card shadow-sm h-100">
-                                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0"><i class="bi bi-collection me-2"></i>Secciones</h6>
-                                    <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#modalSeccion">
-                                        <i class="bi bi-plus"></i>
-                                    </button>
-                                </div>
-                                <div class="card-body" style="max-height: 300px; overflow-y: auto;">
-                                    <ul class="list-group list-group-flush" id="listaSecciones">
-                                        <li class="list-group-item text-center text-muted">Cargando...</li>
-                                    </ul>
+                                <div class="card-body">
+                                    <div class="row" id="listaGradosSecciones">
+                                        <div class="col-12 text-center text-muted py-4">
+                                            <div class="spinner-border text-primary"></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Asignar Horario -->
+    <div class="modal fade" id="modalAsignarHorario" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Asignar Clase</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formAsignarHorario" onsubmit="guardarAsignacionHorario(event)">
+                    <div class="modal-body">
+                        <input type="hidden" id="idHorarioClase">
+                        <div class="alert alert-light" id="infoBloque">
+                            <!-- Info del bloque seleccionado -->
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Materia (Especialidad)</label>
+                            <select class="form-select" id="materiaHorario">
+                                <option value="">-- Sin asignar --</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Profesor</label>
+                            <select class="form-select" id="profesorHorario">
+                                <option value="">-- Sin asignar --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Guardar</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
