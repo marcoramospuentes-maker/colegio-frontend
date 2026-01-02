@@ -188,13 +188,14 @@
                                             <th>Ap. Materno</th>
                                             <th>Sexo</th>
                                             <th>Fecha Nac.</th>
+                                            <th>Padre/Apoderado</th>
                                             <th>Dirección</th>
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tablaEstudiantes">
                                         <tr>
-                                            <td colspan="8" class="text-center py-4">
+                                            <td colspan="9" class="text-center py-4">
                                                 <div class="spinner-border text-primary" role="status"></div>
                                             </td>
                                         </tr>
@@ -419,6 +420,20 @@
                             <div class="col-md-6">
                                 <label class="form-label">Fecha de Nacimiento <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="fechaNacimiento" required>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        <h6 class="text-info mb-3"><i class="bi bi-person-hearts me-2"></i>Padre/Apoderado <span class="text-danger">*</span></h6>
+                        <div class="alert alert-info py-2">
+                            <small><i class="bi bi-info-circle me-1"></i>Primero debe registrar al padre en la sección "Padres" antes de crear el estudiante.</small>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-12">
+                                <label class="form-label">Seleccionar Padre/Apoderado <span class="text-danger">*</span></label>
+                                <select class="form-select" id="padreEstudiante" required>
+                                    <option value="">Seleccione padre/apoderado...</option>
+                                </select>
                             </div>
                         </div>
                         

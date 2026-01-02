@@ -40,7 +40,7 @@ async function cargarEstudiantes() {
         }
 
         if (estudiantes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No hay estudiantes registrados</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No hay estudiantes registrados</td></tr>';
             hideLoading();
             return;
         }
@@ -50,6 +50,7 @@ async function cargarEstudiantes() {
             var fechaNac = est.Fecha_nacimiento ? new Date(est.Fecha_nacimiento).toLocaleDateString() : '-';
             var sexo = est.Sexo === 'M' ? 'Masculino' : 'Femenino';
             var direccion = [est.Distrito, est.Provincia].filter(Boolean).join(', ') || '-';
+            var padre = est.Nombre_padre || '<span class="text-muted">Sin asignar</span>';
             html += '<tr>';
             html += '<td><strong>' + est.DNI_estudiante + '</strong></td>';
             html += '<td>' + est.Nombre_estudiante + '</td>';
@@ -57,6 +58,7 @@ async function cargarEstudiantes() {
             html += '<td>' + est.ApellidoMaterno_estudiante + '</td>';
             html += '<td>' + sexo + '</td>';
             html += '<td>' + fechaNac + '</td>';
+            html += '<td>' + padre + '</td>';
             html += '<td>' + direccion + '</td>';
             html += '<td>';
             html += '<button class="btn btn-sm btn-outline-primary btn-action" onclick="editarEstudiante(\'' + est.DNI_estudiante + '\')"><i class="bi bi-pencil"></i></button> ';
@@ -76,6 +78,14 @@ async function cargarEstudiantes() {
 async function guardarEstudiante(event) {
     event.preventDefault();
 
+    var padreSelect = document.getElementById('padreEstudiante');
+    var dniPadre = padreSelect ? padreSelect.value : null;
+    
+    if (!dniPadre) {
+        showAlert('Debe seleccionar un Padre/Apoderado. Si no existe, registrelo primero en la seccion Padres.', 'warning');
+        return;
+    }
+
     var formData = {
         DNI_estudiante: document.getElementById('dniEstudiante').value,
         Nombre_estudiante: document.getElementById('nombreEstudiante').value,
@@ -83,6 +93,7 @@ async function guardarEstudiante(event) {
         ApellidoMaterno_estudiante: document.getElementById('apellidoMaternoEstudiante').value,
         Sexo: document.getElementById('sexoEstudiante').value,
         Fecha_nacimiento: document.getElementById('fechaNacimiento').value,
+        DNI_padre: dniPadre,
         Provincia: document.getElementById('provinciaEstudiante') ? document.getElementById('provinciaEstudiante').value || null : null,
         Distrito: document.getElementById('distritoEstudiante') ? document.getElementById('distritoEstudiante').value || null : null,
         Manzana: document.getElementById('manzanaEstudiante') ? document.getElementById('manzanaEstudiante').value || null : null,
@@ -148,6 +159,9 @@ async function editarEstudiante(dni) {
         if (document.getElementById('calleEstudiante')) document.getElementById('calleEstudiante').value = est.Calle || '';
         if (document.getElementById('referenciaEstudiante')) document.getElementById('referenciaEstudiante').value = est.Referencia || '';
         
+        // Cargar padres y seleccionar el asignado
+        await cargarPadresParaEstudiante(est.DNI_padre);
+        
         document.getElementById('formEstudiante').dataset.editing = dni;
         document.getElementById('modalEstudianteLabel').textContent = 'Editar Estudiante';
         
@@ -184,6 +198,36 @@ function nuevoEstudiante() {
     delete document.getElementById('formEstudiante').dataset.editing;
     document.getElementById('dniEstudiante').readOnly = false;
     document.getElementById('modalEstudianteLabel').textContent = 'Nuevo Estudiante';
+    cargarPadresParaEstudiante();
+}
+
+// Cargar lista de padres para el select de estudiante
+async function cargarPadresParaEstudiante(dniPadreSeleccionado) {
+    try {
+        var response = await fetch(API_URL + '/padres');
+        var padres = await response.json();
+        var select = document.getElementById('padreEstudiante');
+        if (!select) return;
+        
+        select.innerHTML = '<option value="">Seleccione padre/apoderado...</option>';
+        
+        if (padres.length === 0) {
+            select.innerHTML = '<option value="">No hay padres registrados - Registre uno primero</option>';
+            return;
+        }
+        
+        padres.forEach(function(padre) {
+            var option = document.createElement('option');
+            option.value = padre.DNI_padre;
+            option.textContent = padre.DNI_padre + ' - ' + padre.Nombre_padre + ' ' + padre.ApellidoPaterno_padre + ' ' + padre.ApellidoMaterno_padre;
+            if (dniPadreSeleccionado && padre.DNI_padre == dniPadreSeleccionado) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error al cargar padres:', error);
+    }
 }
 
 // ============ PADRES ============
