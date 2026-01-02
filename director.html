@@ -256,17 +256,18 @@
                                 <table class="table table-hover">
                                     <thead class="table-dark">
                                         <tr>
-                                            <th>DNI</th>
+                                            <th>Código (DNI)</th>
                                             <th>Nombre</th>
                                             <th>Ap. Paterno</th>
                                             <th>Ap. Materno</th>
-                                            <th>Teléfono</th>
+                                            <th>Especialidad(es)</th>
+                                            <th>Horario(s)</th>
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tablaProfesores">
                                         <tr>
-                                            <td colspan="6" class="text-center py-4">
+                                            <td colspan="7" class="text-center py-4">
                                                 <div class="spinner-border text-primary" role="status"></div>
                                             </td>
                                         </tr>
@@ -530,7 +531,7 @@
 
     <!-- Modal Profesor -->
     <div class="modal fade" id="modalProfesor" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title" id="modalProfesorLabel">Nuevo Profesor</h5>
@@ -538,25 +539,54 @@
                 </div>
                 <form id="formProfesor" onsubmit="guardarProfesor(event)">
                     <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">DNI <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="dniProfesor" required maxlength="8" pattern="[0-9]{8}">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Código (DNI) <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="codigoProfesor" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="nombreProfesor" required>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Nombre <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="nombreProfesor" required>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Apellido Paterno <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="apellidoPaternoProfesor" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Apellido Materno <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="apellidoMaternoProfesor" required>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Apellido Paterno <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="apellidoPaternoProfesor" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Apellido Materno <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="apellidoMaternoProfesor" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Teléfono</label>
-                            <input type="tel" class="form-control" id="telefonoProfesor" maxlength="15">
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Especialidad(es)</label>
+                                    <select class="form-select" id="especialidadesProfesor" multiple size="4">
+                                        <!-- Se cargan dinámicamente -->
+                                    </select>
+                                    <small class="text-muted">Ctrl+Click para seleccionar varias</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Horario(s)</label>
+                                    <select class="form-select" id="horariosProfesor" multiple size="4">
+                                        <!-- Se cargan dinámicamente -->
+                                    </select>
+                                    <small class="text-muted">Ctrl+Click para seleccionar varios</small>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">

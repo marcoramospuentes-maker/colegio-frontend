@@ -388,7 +388,7 @@ async function cargarProfesores() {
         }
 
         if (profesores.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No hay profesores registrados</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No hay profesores registrados</td></tr>';
             hideLoading();
             return;
         }
@@ -396,14 +396,15 @@ async function cargarProfesores() {
         var html = '';
         profesores.forEach(function(prof) {
             html += '<tr>';
-            html += '<td><strong>' + prof.DNI_profesor + '</strong></td>';
+            html += '<td><strong>' + prof.Codigo_profesor + '</strong></td>';
             html += '<td>' + prof.Nombre_profesor + '</td>';
             html += '<td>' + prof.ApellidoPaterno_profesor + '</td>';
             html += '<td>' + prof.ApellidoMaterno_profesor + '</td>';
-            html += '<td>' + (prof.Telefono_profesor || '-') + '</td>';
+            html += '<td>' + (prof.Especialidades || '<span class="text-muted">Sin asignar</span>') + '</td>';
+            html += '<td>' + (prof.Horarios || '<span class="text-muted">Sin asignar</span>') + '</td>';
             html += '<td>';
-            html += '<button class="btn btn-sm btn-outline-primary btn-action" onclick="editarProfesor(\'' + prof.DNI_profesor + '\')"><i class="bi bi-pencil"></i></button> ';
-            html += '<button class="btn btn-sm btn-outline-danger btn-action" onclick="eliminarProfesor(\'' + prof.DNI_profesor + '\')"><i class="bi bi-trash"></i></button>';
+            html += '<button class="btn btn-sm btn-outline-primary btn-action" onclick="editarProfesor(' + prof.Codigo_profesor + ')"><i class="bi bi-pencil"></i></button> ';
+            html += '<button class="btn btn-sm btn-outline-danger btn-action" onclick="eliminarProfesor(' + prof.Codigo_profesor + ')"><i class="bi bi-trash"></i></button>';
             html += '</td></tr>';
         });
         tbody.innerHTML = html;
@@ -416,14 +417,74 @@ async function cargarProfesores() {
     }
 }
 
+// Cargar especialidades en el select del modal
+async function cargarEspecialidadesSelect() {
+    try {
+        var response = await fetch(API_URL + '/especialidades');
+        var especialidades = await response.json();
+        var select = document.getElementById('especialidadesProfesor');
+        if (!select) return;
+        
+        select.innerHTML = '';
+        especialidades.forEach(function(esp) {
+            var option = document.createElement('option');
+            option.value = esp.Id_especialidad;
+            option.textContent = esp.Nombre_especialidad;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error al cargar especialidades:', error);
+    }
+}
+
+// Cargar horarios en el select del modal
+async function cargarHorariosSelect() {
+    try {
+        var response = await fetch(API_URL + '/horarios');
+        var horarios = await response.json();
+        var select = document.getElementById('horariosProfesor');
+        if (!select) return;
+        
+        select.innerHTML = '';
+        horarios.forEach(function(hor) {
+            var option = document.createElement('option');
+            option.value = hor.Id_horario;
+            option.textContent = hor.Hora_inicio + ' - ' + hor.Hora_fin;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error al cargar horarios:', error);
+    }
+}
+
 async function guardarProfesor(event) {
     event.preventDefault();
+    
+    // Obtener especialidades seleccionadas
+    var especialidadesSelect = document.getElementById('especialidadesProfesor');
+    var especialidades = [];
+    if (especialidadesSelect) {
+        for (var i = 0; i < especialidadesSelect.selectedOptions.length; i++) {
+            especialidades.push(parseInt(especialidadesSelect.selectedOptions[i].value));
+        }
+    }
+    
+    // Obtener horarios seleccionados
+    var horariosSelect = document.getElementById('horariosProfesor');
+    var horarios = [];
+    if (horariosSelect) {
+        for (var i = 0; i < horariosSelect.selectedOptions.length; i++) {
+            horarios.push(parseInt(horariosSelect.selectedOptions[i].value));
+        }
+    }
+    
     var formData = {
-        DNI_profesor: document.getElementById('dniProfesor').value,
+        Codigo_profesor: parseInt(document.getElementById('codigoProfesor').value),
         Nombre_profesor: document.getElementById('nombreProfesor').value,
         ApellidoPaterno_profesor: document.getElementById('apellidoPaternoProfesor').value,
         ApellidoMaterno_profesor: document.getElementById('apellidoMaternoProfesor').value,
-        Telefono_profesor: document.getElementById('telefonoProfesor').value || null
+        especialidades: especialidades,
+        horarios: horarios
     };
 
     var isEditing = document.getElementById('formProfesor').dataset.editing;
@@ -462,20 +523,40 @@ async function guardarProfesor(event) {
     }
 }
 
-async function editarProfesor(dni) {
+async function editarProfesor(codigo) {
     try {
         showLoading();
-        var response = await fetch(API_URL + '/profesores/' + dni);
+        
+        // Cargar los selects primero
+        await cargarEspecialidadesSelect();
+        await cargarHorariosSelect();
+        
+        var response = await fetch(API_URL + '/profesores/' + codigo);
         var prof = await response.json();
         
-        document.getElementById('dniProfesor').value = prof.DNI_profesor;
-        document.getElementById('dniProfesor').readOnly = true;
+        document.getElementById('codigoProfesor').value = prof.Codigo_profesor;
+        document.getElementById('codigoProfesor').readOnly = true;
         document.getElementById('nombreProfesor').value = prof.Nombre_profesor;
         document.getElementById('apellidoPaternoProfesor').value = prof.ApellidoPaterno_profesor;
         document.getElementById('apellidoMaternoProfesor').value = prof.ApellidoMaterno_profesor;
-        document.getElementById('telefonoProfesor').value = prof.Telefono_profesor || '';
         
-        document.getElementById('formProfesor').dataset.editing = dni;
+        // Seleccionar especialidades del profesor
+        var especialidadesSelect = document.getElementById('especialidadesProfesor');
+        if (especialidadesSelect && prof.especialidades) {
+            for (var i = 0; i < especialidadesSelect.options.length; i++) {
+                especialidadesSelect.options[i].selected = prof.especialidades.includes(parseInt(especialidadesSelect.options[i].value));
+            }
+        }
+        
+        // Seleccionar horarios del profesor
+        var horariosSelect = document.getElementById('horariosProfesor');
+        if (horariosSelect && prof.horarios) {
+            for (var i = 0; i < horariosSelect.options.length; i++) {
+                horariosSelect.options[i].selected = prof.horarios.includes(parseInt(horariosSelect.options[i].value));
+            }
+        }
+        
+        document.getElementById('formProfesor').dataset.editing = codigo;
         document.getElementById('modalProfesorLabel').textContent = 'Editar Profesor';
         
         var modal = new bootstrap.Modal(document.getElementById('modalProfesor'));
@@ -488,11 +569,11 @@ async function editarProfesor(dni) {
     }
 }
 
-async function eliminarProfesor(dni) {
+async function eliminarProfesor(codigo) {
     if (!confirm('¿Está seguro de eliminar este profesor?')) return;
     try {
         showLoading();
-        var response = await fetch(API_URL + '/profesores/' + dni, { method: 'DELETE' });
+        var response = await fetch(API_URL + '/profesores/' + codigo, { method: 'DELETE' });
         if (response.ok) {
             showAlert('Profesor eliminado', 'success');
             cargarProfesores();
@@ -506,11 +587,15 @@ async function eliminarProfesor(dni) {
     }
 }
 
-function nuevoProfesor() {
+async function nuevoProfesor() {
     document.getElementById('formProfesor').reset();
     delete document.getElementById('formProfesor').dataset.editing;
-    document.getElementById('dniProfesor').readOnly = false;
+    document.getElementById('codigoProfesor').readOnly = false;
     document.getElementById('modalProfesorLabel').textContent = 'Nuevo Profesor';
+    
+    // Cargar los selects
+    await cargarEspecialidadesSelect();
+    await cargarHorariosSelect();
 }
 
 // ============ MATRÍCULAS ============
