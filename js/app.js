@@ -40,7 +40,7 @@ async function cargarEstudiantes() {
         }
 
         if (estudiantes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No hay estudiantes registrados</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No hay estudiantes registrados</td></tr>';
             hideLoading();
             return;
         }
@@ -51,6 +51,7 @@ async function cargarEstudiantes() {
             var sexo = est.Sexo === 'M' ? 'Masculino' : 'Femenino';
             var direccion = [est.Distrito, est.Provincia].filter(Boolean).join(', ') || '-';
             var padre = est.Nombre_padre || '<span class="text-muted">Sin asignar</span>';
+            var lugarNac = est.Lugar_nacimiento || '-';
             html += '<tr>';
             html += '<td><strong>' + est.DNI_estudiante + '</strong></td>';
             html += '<td>' + est.Nombre_estudiante + '</td>';
@@ -58,6 +59,7 @@ async function cargarEstudiantes() {
             html += '<td>' + est.ApellidoMaterno_estudiante + '</td>';
             html += '<td>' + sexo + '</td>';
             html += '<td>' + fechaNac + '</td>';
+            html += '<td>' + lugarNac + '</td>';
             html += '<td>' + padre + '</td>';
             html += '<td>' + direccion + '</td>';
             html += '<td>';
@@ -94,6 +96,7 @@ async function guardarEstudiante(event) {
         Sexo: document.getElementById('sexoEstudiante').value,
         Fecha_nacimiento: document.getElementById('fechaNacimiento').value,
         DNI_padre: dniPadre,
+        Lugar_nacimiento: document.getElementById('lugarNacimiento') ? document.getElementById('lugarNacimiento').value || null : null,
         Provincia: document.getElementById('provinciaEstudiante') ? document.getElementById('provinciaEstudiante').value || null : null,
         Distrito: document.getElementById('distritoEstudiante') ? document.getElementById('distritoEstudiante').value || null : null,
         Manzana: document.getElementById('manzanaEstudiante') ? document.getElementById('manzanaEstudiante').value || null : null,
@@ -158,6 +161,7 @@ async function editarEstudiante(dni) {
         if (document.getElementById('loteEstudiante')) document.getElementById('loteEstudiante').value = est.Lote || '';
         if (document.getElementById('calleEstudiante')) document.getElementById('calleEstudiante').value = est.Calle || '';
         if (document.getElementById('referenciaEstudiante')) document.getElementById('referenciaEstudiante').value = est.Referencia || '';
+        if (document.getElementById('lugarNacimiento')) document.getElementById('lugarNacimiento').value = est.Lugar_nacimiento || '';
         
         // Cargar padres y seleccionar el asignado
         await cargarPadresParaEstudiante(est.DNI_padre);
