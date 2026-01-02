@@ -403,17 +403,17 @@
                                 <div class="col-md-4">
                                     <label class="form-label"><i class="bi bi-mortarboard me-2"></i>Seleccione Grado</label>
                                     <select class="form-select" id="selectGradoHorario" onchange="cargarSeccionesParaHorario()">
-                                        <option value="">-- Seleccione un grado --</option>
+                                        <option value="">-- Seleccione Grado --</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label"><i class="bi bi-collection me-2"></i>Seleccione Sección</label>
-                                    <select class="form-select" id="selectSeccionHorario" onchange="cargarGrillaHorario()" disabled>
+                                    <select class="form-select" id="selectSeccionHorario" onchange="cargarGrillaHorario()">
                                         <option value="">-- Primero seleccione grado --</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
-                                    <button class="btn btn-primary w-100" onclick="inicializarGrillaHorario()" id="btnInicializarHorario" disabled>
+                                    <button class="btn btn-primary w-100" onclick="inicializarGrillaHorario()" id="btnInicializarHorario">
                                         <i class="bi bi-grid-3x3 me-1"></i> Crear Grilla de Horario
                                     </button>
                                 </div>
@@ -445,7 +445,7 @@
                                             <th>Viernes</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="bodyHorarioClase">
+                                    <tbody id="cuerpoGrillaHorario">
                                         <tr>
                                             <td colspan="6" class="text-center text-muted py-5">
                                                 <i class="bi bi-calendar-x fs-1 d-block mb-2"></i>
@@ -463,7 +463,7 @@
                 <div id="seccion-grados-secciones" class="content-section d-none">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4><i class="bi bi-list-ul me-2"></i>Grados y Secciones</h4>
-                        <button class="btn btn-success" onclick="inicializarCatalogos()">
+                        <button class="btn btn-success" onclick="inicializarGradosSecciones()">
                             <i class="bi bi-magic me-1"></i> Inicializar Datos
                         </button>
                     </div>
@@ -489,8 +489,8 @@
         </div>
     </div>
 
-    <!-- Modal Asignar Horario -->
-    <div class="modal fade" id="modalAsignarHorario" tabindex="-1">
+    <!-- Modal Asignar Clase -->
+    <div class="modal fade" id="modalAsignarClase" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
@@ -505,13 +505,13 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Materia (Especialidad)</label>
-                            <select class="form-select" id="materiaHorario">
+                            <select class="form-select" id="selectEspecialidadAsignar">
                                 <option value="">-- Sin asignar --</option>
                             </select>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Profesor</label>
-                            <select class="form-select" id="profesorHorario">
+                            <select class="form-select" id="selectProfesorAsignar">
                                 <option value="">-- Sin asignar --</option>
                             </select>
                         </div>
@@ -711,22 +711,13 @@
                         </div>
                         <hr>
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <div class="mb-3">
                                     <label class="form-label">Especialidad(es)</label>
                                     <select class="form-select" id="especialidadesProfesor" multiple size="4">
                                         <!-- Se cargan dinámicamente -->
                                     </select>
                                     <small class="text-muted">Ctrl+Click para seleccionar varias</small>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Horario(s)</label>
-                                    <select class="form-select" id="horariosProfesor" multiple size="4">
-                                        <!-- Se cargan dinámicamente -->
-                                    </select>
-                                    <small class="text-muted">Ctrl+Click para seleccionar varios</small>
                                 </div>
                             </div>
                         </div>

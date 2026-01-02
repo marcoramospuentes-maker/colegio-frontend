@@ -1187,7 +1187,7 @@ async function abrirModalAsignacion(idHorarioClase) {
         var selectProf = document.getElementById('selectProfesorAsignar');
         selectProf.innerHTML = '<option value="">-- Seleccione Profesor --</option>';
         profesores.forEach(function(p) {
-            selectProf.innerHTML += '<option value="' + p.Codigo_profesor + '">' + p.Nombre + ' ' + p.Apellidos + '</option>';
+            selectProf.innerHTML += '<option value="' + p.Codigo_profesor + '">' + p.Nombre_profesor + ' ' + p.ApellidoPaterno_profesor + ' ' + p.ApellidoMaterno_profesor + '</option>';
         });
 
         // Mostrar modal
@@ -1209,7 +1209,7 @@ async function guardarAsignacionHorario(event) {
 
     try {
         showLoading();
-        var response = await fetch(API_URL + '/horario-clase/asignar/' + idHorarioClase, {
+        var response = await fetch(API_URL + '/horario-clase/' + idHorarioClase, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1240,7 +1240,7 @@ async function limpiarAsignacionHorario() {
 
     try {
         showLoading();
-        var response = await fetch(API_URL + '/horario-clase/asignar/' + idHorarioClase, {
+        var response = await fetch(API_URL + '/horario-clase/' + idHorarioClase, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
