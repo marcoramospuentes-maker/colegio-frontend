@@ -988,9 +988,290 @@ function mostrarSeccion(seccion) {
         case 'calificaciones':
             cargarCalificaciones();
             break;
+        case 'catalogos':
+            cargarCatalogos();
+            break;
         case 'dashboard':
             cargarDashboard();
             break;
+    }
+}
+
+// ============ CATÁLOGOS ============
+async function cargarCatalogos() {
+    await Promise.all([
+        cargarListaGrados(),
+        cargarListaEspecialidades(),
+        cargarListaHorarios(),
+        cargarListaSecciones()
+    ]);
+}
+
+async function cargarListaGrados() {
+    try {
+        var response = await fetch(API_URL + '/grados');
+        var grados = await response.json();
+        var lista = document.getElementById('listaGrados');
+        if (!lista) return;
+
+        if (grados.length === 0) {
+            lista.innerHTML = '<li class="list-group-item text-center text-muted"><i class="bi bi-inbox"></i> Sin grados</li>';
+            return;
+        }
+
+        var html = '';
+        grados.forEach(function(g) {
+            html += '<li class="list-group-item d-flex justify-content-between align-items-center">';
+            html += '<span>' + g.Nombre_grado + '</span>';
+            html += '<button class="btn btn-sm btn-outline-danger" onclick="eliminarGrado(' + g.Id_grado + ')"><i class="bi bi-trash"></i></button>';
+            html += '</li>';
+        });
+        lista.innerHTML = html;
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function cargarListaEspecialidades() {
+    try {
+        var response = await fetch(API_URL + '/especialidades');
+        var especialidades = await response.json();
+        var lista = document.getElementById('listaEspecialidades');
+        if (!lista) return;
+
+        if (especialidades.length === 0) {
+            lista.innerHTML = '<li class="list-group-item text-center text-muted"><i class="bi bi-inbox"></i> Sin especialidades</li>';
+            return;
+        }
+
+        var html = '';
+        especialidades.forEach(function(e) {
+            html += '<li class="list-group-item d-flex justify-content-between align-items-center">';
+            html += '<span>' + e.Nombre_especialidad + '</span>';
+            html += '<button class="btn btn-sm btn-outline-danger" onclick="eliminarEspecialidad(' + e.Id_especialidad + ')"><i class="bi bi-trash"></i></button>';
+            html += '</li>';
+        });
+        lista.innerHTML = html;
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function cargarListaHorarios() {
+    try {
+        var response = await fetch(API_URL + '/horarios');
+        var horarios = await response.json();
+        var lista = document.getElementById('listaHorarios');
+        if (!lista) return;
+
+        if (horarios.length === 0) {
+            lista.innerHTML = '<li class="list-group-item text-center text-muted"><i class="bi bi-inbox"></i> Sin horarios</li>';
+            return;
+        }
+
+        var html = '';
+        horarios.forEach(function(h) {
+            html += '<li class="list-group-item d-flex justify-content-between align-items-center">';
+            html += '<span><i class="bi bi-clock me-2"></i>' + h.Hora_inicio + ' - ' + h.Hora_fin + '</span>';
+            html += '<button class="btn btn-sm btn-outline-danger" onclick="eliminarHorario(' + h.Id_horario + ')"><i class="bi bi-trash"></i></button>';
+            html += '</li>';
+        });
+        lista.innerHTML = html;
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function cargarListaSecciones() {
+    try {
+        var response = await fetch(API_URL + '/secciones');
+        var secciones = await response.json();
+        var lista = document.getElementById('listaSecciones');
+        if (!lista) return;
+
+        if (secciones.length === 0) {
+            lista.innerHTML = '<li class="list-group-item text-center text-muted"><i class="bi bi-inbox"></i> Sin secciones</li>';
+            return;
+        }
+
+        var html = '';
+        secciones.forEach(function(s) {
+            html += '<li class="list-group-item d-flex justify-content-between align-items-center">';
+            html += '<span><i class="bi bi-sun me-2"></i>' + s.Turno + ' (' + s.Cantidad_alumnos + ' alumnos)</span>';
+            html += '<button class="btn btn-sm btn-outline-danger" onclick="eliminarSeccion(' + s.Id_seccion + ')"><i class="bi bi-trash"></i></button>';
+            html += '</li>';
+        });
+        lista.innerHTML = html;
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// Guardar Grado
+async function guardarGrado(event) {
+    event.preventDefault();
+    try {
+        showLoading();
+        var response = await fetch(API_URL + '/grados', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ Nombre_grado: document.getElementById('nombreGrado').value })
+        });
+        if (response.ok) {
+            showAlert('Grado creado', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('modalGrado')).hide();
+            document.getElementById('formGrado').reset();
+            cargarListaGrados();
+        } else {
+            showAlert('Error al crear grado', 'danger');
+        }
+    } catch (error) {
+        showAlert('Error de conexión', 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Guardar Especialidad
+async function guardarEspecialidad(event) {
+    event.preventDefault();
+    try {
+        showLoading();
+        var response = await fetch(API_URL + '/especialidades', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ Nombre_especialidad: document.getElementById('nombreEspecialidad').value })
+        });
+        if (response.ok) {
+            showAlert('Especialidad creada', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('modalEspecialidad')).hide();
+            document.getElementById('formEspecialidad').reset();
+            cargarListaEspecialidades();
+        } else {
+            showAlert('Error al crear especialidad', 'danger');
+        }
+    } catch (error) {
+        showAlert('Error de conexión', 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Guardar Horario
+async function guardarHorario(event) {
+    event.preventDefault();
+    try {
+        showLoading();
+        var response = await fetch(API_URL + '/horarios', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                Hora_inicio: document.getElementById('horaInicio').value,
+                Hora_fin: document.getElementById('horaFin').value
+            })
+        });
+        if (response.ok) {
+            showAlert('Horario creado', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('modalHorario')).hide();
+            document.getElementById('formHorario').reset();
+            cargarListaHorarios();
+        } else {
+            showAlert('Error al crear horario', 'danger');
+        }
+    } catch (error) {
+        showAlert('Error de conexión', 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Guardar Sección
+async function guardarSeccion(event) {
+    event.preventDefault();
+    try {
+        showLoading();
+        var response = await fetch(API_URL + '/secciones', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                Turno: document.getElementById('turnoSeccion').value,
+                Cantidad_alumnos: parseInt(document.getElementById('cantidadAlumnos').value) || 30
+            })
+        });
+        if (response.ok) {
+            showAlert('Sección creada', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('modalSeccion')).hide();
+            document.getElementById('formSeccion').reset();
+            cargarListaSecciones();
+        } else {
+            showAlert('Error al crear sección', 'danger');
+        }
+    } catch (error) {
+        showAlert('Error de conexión', 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Eliminar funciones
+async function eliminarGrado(id) {
+    if (!confirm('¿Eliminar este grado?')) return;
+    try {
+        await fetch(API_URL + '/grados/' + id, { method: 'DELETE' });
+        showAlert('Grado eliminado', 'success');
+        cargarListaGrados();
+    } catch (error) {
+        showAlert('Error al eliminar', 'danger');
+    }
+}
+
+async function eliminarEspecialidad(id) {
+    if (!confirm('¿Eliminar esta especialidad?')) return;
+    try {
+        await fetch(API_URL + '/especialidades/' + id, { method: 'DELETE' });
+        showAlert('Especialidad eliminada', 'success');
+        cargarListaEspecialidades();
+    } catch (error) {
+        showAlert('Error al eliminar', 'danger');
+    }
+}
+
+async function eliminarHorario(id) {
+    if (!confirm('¿Eliminar este horario?')) return;
+    try {
+        await fetch(API_URL + '/horarios/' + id, { method: 'DELETE' });
+        showAlert('Horario eliminado', 'success');
+        cargarListaHorarios();
+    } catch (error) {
+        showAlert('Error al eliminar', 'danger');
+    }
+}
+
+async function eliminarSeccion(id) {
+    if (!confirm('¿Eliminar esta sección?')) return;
+    try {
+        await fetch(API_URL + '/secciones/' + id, { method: 'DELETE' });
+        showAlert('Sección eliminada', 'success');
+        cargarListaSecciones();
+    } catch (error) {
+        showAlert('Error al eliminar', 'danger');
+    }
+}
+
+// Inicializar Catálogos
+async function inicializarCatalogos() {
+    if (!confirm('¿Desea inicializar los catálogos con datos predeterminados?\n\nEsto creará:\n- 9 Grados (Inicial y Primaria)\n- 9 Especialidades\n- 7 Horarios\n- 4 Secciones')) return;
+    
+    try {
+        showLoading();
+        var response = await fetch(API_URL + '/inicializar-catalogos', { method: 'POST' });
+        var data = await response.json();
+        showAlert(data.message, 'success');
+        cargarCatalogos();
+    } catch (error) {
+        showAlert('Error al inicializar catálogos', 'danger');
+    } finally {
+        hideLoading();
     }
 }
 
