@@ -260,6 +260,7 @@ async function cargarPadres() {
             html += '<td>' + padre.ApellidoPaterno_padre + '</td>';
             html += '<td>' + padre.ApellidoMaterno_padre + '</td>';
             html += '<td>' + (padre.Telefono_padre || '-') + '</td>';
+            html += '<td>' + (padre.Ocupacion || '-') + '</td>';
             html += '<td>';
             html += '<button class="btn btn-sm btn-outline-primary btn-action" onclick="editarPadre(\'' + padre.DNI_padre + '\')"><i class="bi bi-pencil"></i></button> ';
             html += '<button class="btn btn-sm btn-outline-danger btn-action" onclick="eliminarPadre(\'' + padre.DNI_padre + '\')"><i class="bi bi-trash"></i></button>';
@@ -282,7 +283,8 @@ async function guardarPadre(event) {
         Nombre_padre: document.getElementById('nombrePadre').value,
         ApellidoPaterno_padre: document.getElementById('apellidoPaternoPadre').value,
         ApellidoMaterno_padre: document.getElementById('apellidoMaternoPadre').value,
-        Telefono_padre: document.getElementById('telefonoPadre').value || null
+        Telefono_padre: document.getElementById('telefonoPadre').value || null,
+        Ocupacion: document.getElementById('ocupacionPadre').value || null
     };
 
     var isEditing = document.getElementById('formPadre').dataset.editing;
@@ -333,6 +335,7 @@ async function editarPadre(dni) {
         document.getElementById('apellidoPaternoPadre').value = padre.ApellidoPaterno_padre;
         document.getElementById('apellidoMaternoPadre').value = padre.ApellidoMaterno_padre;
         document.getElementById('telefonoPadre').value = padre.Telefono_padre || '';
+        document.getElementById('ocupacionPadre').value = padre.Ocupacion || '';
         
         document.getElementById('formPadre').dataset.editing = dni;
         document.getElementById('modalPadreLabel').textContent = 'Editar Padre';
